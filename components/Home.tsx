@@ -15,7 +15,7 @@ const Home = () => {
         {name: "Snake", path: "/snake", },
         {name: "Tic Tac Toe", path: "/tic-tac-toe"},
         {name: "Matching tiles", path: "/matching-tiles"},
-        {name: "Bon Apetite", path: "/bon-apetite"}
+        {name: "Bounce", path: "/bounce"}
     ]
 
     const pathname = usePathname();
