@@ -13,34 +13,51 @@ const Bounce = () => {
   const [gameState, setGameState] = useState<"MENU" | "PLAYING" | "PAUSED" | "FAIL">("MENU");
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [speedMultiplier, setSpeedMultiplier] = useState(1); // Modifies object speeds based on difficulty
+  const [speedMultiplier, setSpeedMultiplier] = useState(1); 
 
-  // Ball physics configuration variables (Calculated in grid percentages)
-  const [ballY, setBallY] = useState(50); // Vertical axis position (0 is top, 100 is ground)
-  const velocityRef = useRef(0); // Going up/down accumulator metric
+  // Ball physics configuration variables
+  const [ballY, setBallY] = useState(50);
+  const velocityRef = useRef(0);
+  const jumpCountRef = useRef(0); // Tracking multi-jump counts (up to 2 jumps)
   
-  const GRAVITY = 0.6;
-  const BOUNCE_FORCE = -12;
-  const TERMINAL_VELOCITY = 15;
+  const GRAVITY = 0.5;
+  const IDLE_BOUNCE_FORCE = -5;  // Small, automatic gentle bounce on floor impact
+  const BASE_BOUNCE_FORCE = -10; // First intentional space-bar bounce
+  const DOUBLE_BOUNCE_FORCE = -14; // Second immediate space-bar bounce
+  const TERMINAL_VELOCITY = 14;
 
   // Obstacles track tracking arrays
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const nextObstacleId = useRef(0);
   const obstacleSpawnTimer = useRef(0);
 
-  // References to bypass React stale state boundaries inside requestAnimationFrame loops
+  // References to bypass React stale state boundaries inside loops
   const stateRef = useRef(gameState);
   stateRef.current = gameState;
   const speedRef = useRef(speedMultiplier);
   speedRef.current = speedMultiplier;
 
-  // Trigger a bounce
+  // Load High Score from local storage on mount
+  useEffect(() => {
+    const savedHighScore = localStorage.getItem("retro_bounce_highscore");
+    if (savedHighScore) {
+      setHighScore(parseInt(savedHighScore, 10));
+    }
+  }, []);
+
+  // Trigger a manual bounce (Space / Click)
   const handleBounce = () => {
     if (stateRef.current !== "PLAYING") return;
-    velocityRef.current = BOUNCE_FORCE;
+    
+    if (jumpCountRef.current === 0) {
+      velocityRef.current = BASE_BOUNCE_FORCE;
+      jumpCountRef.current = 1;
+    } else if (jumpCountRef.current === 1) {
+      velocityRef.current = DOUBLE_BOUNCE_FORCE;
+      jumpCountRef.current = 2;
+    }
   };
 
-  // Set difficulty profile selection parameters
   const selectDifficulty = (multiplier: number) => {
     setSpeedMultiplier(multiplier);
     startGame();
@@ -50,25 +67,24 @@ const Bounce = () => {
     setScore(0);
     setBallY(40);
     velocityRef.current = 0;
+    jumpCountRef.current = 0;
     setObstacles([]);
     nextObstacleId.current = 0;
     obstacleSpawnTimer.current = 0;
     setGameState("PLAYING");
   };
 
-  // Global Key Event listeners for jump actions & pauses
+  // Global Key Event listeners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " ") {
-        e.preventDefault(); // Mute standard page scrolling behaviors
+        e.preventDefault();
         if (stateRef.current === "PLAYING") {
           handleBounce();
         } else if (stateRef.current === "MENU") {
-          // Defaults to Normal mode if space is pounded on raw splash menu
-          selectDifficulty(1.2);
-        } else if (stateRef.current === "FAIL") {
-          startGame();
+          selectDifficulty(1.0); // Default fallback if they space past menu
         }
+        // Removed the "FAIL" state automatic restart check to fix the accidental spacebar continue
       }
       if (e.key === "p" || e.key === "P") {
         if (stateRef.current === "PLAYING") setGameState("PAUSED");
@@ -80,7 +96,7 @@ const Bounce = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Main Game Tick Loop (Runs at smooth 60fps utilizing requestAnimationFrame mechanics)
+  // Main Game Loop Engine
   useEffect(() => {
     let animationFrameId: number;
 
@@ -96,41 +112,47 @@ const Bounce = () => {
       
       setBallY((prevY) => {
         const computedY = prevY + velocityRef.current;
-        // Floor collision boundary configuration
-        if (computedY >= 88) {
-          velocityRef.current = 0; // Kills residual speed inertia
-          return 88;
+        
+        // Floor Boundary: Triggers automatic small gentle bounce
+        if (computedY >= 82) {
+          velocityRef.current = IDLE_BOUNCE_FORCE; 
+          jumpCountRef.current = 0; // Reset double-jump capacity upon touching floor
+          return 82;
         }
-        // Ceiling constraints configuration
+        
+        // Ceiling Constraints Configuration
         if (computedY <= 0) {
-          velocityRef.current = 2; // Bounces downwards gently off screen ceiling
+          velocityRef.current = 2;
           return 0;
         }
+        
         nextBallY = computedY;
         return computedY;
       });
 
-      // 2. Continuous Scoring updates
+      // 2. Score Tracking & Storage Syncing
       setScore((prev) => {
         const newScore = prev + 1;
-        if (newScore > highScore) setHighScore(newScore);
+        if (newScore > highScore) {
+          setHighScore(newScore);
+          localStorage.setItem("retro_bounce_highscore", newScore.toString());
+        }
         return newScore;
       });
 
-      // 3. Spawning Randomised Incoming Ground Obstacles 
+      // 3. Spawning Randomised Incoming Brick Obstacles
       obstacleSpawnTimer.current += 1;
-      // Spawns obstacles roughly every 1.5 to 2.5 seconds dynamically scaled to speed profiles
-      const spawnThreshold = Math.max(50, 90 / speedRef.current);
+      const spawnThreshold = Math.max(40, 80 / speedRef.current);
       if (obstacleSpawnTimer.current >= spawnThreshold) {
-        if (Math.random() > 0.45 || obstacles.length === 0) {
-          const randomWidth = Math.floor(Math.random() * 5) + 4; // Width 4% to 8%
-          const randomHeight = Math.floor(Math.random() * 25) + 15; // Height 15% to 40%
+        if (Math.random() > 0.4 || obstacles.length === 0) {
+          const randomWidth = Math.floor(Math.random() * 3) + 5; 
+          const randomHeight = Math.floor(Math.random() * 20) + 15; 
           
           setObstacles((prev) => [
             ...prev,
             {
               id: nextObstacleId.current++,
-              left: 100, // Starts off-screen right edge
+              left: 100,
               width: randomWidth,
               height: randomHeight,
             },
@@ -139,28 +161,25 @@ const Bounce = () => {
         }
       }
 
-      // 4. Update Obstacle Movements & Collision Grid Parsing Logic
+      // 4. Handle Movement & 2D Box Collisions
       setObstacles((prevObstacles) => {
         const updatedObstacles = prevObstacles
           .map((obs) => ({
             ...obs,
-            left: obs.left - 0.75 * speedRef.current, // Shift leftwards based on chosen speed
+            left: obs.left - 0.8 * speedRef.current,
           }))
-          .filter((obs) => obs.left + obs.width > 0); // Cleanup out-of-bounds nodes cleanly
+          .filter((obs) => obs.left + obs.width > 0);
 
-        // Collision Check Framework
-        // Ball bounds representation metrics: Left static horizontal slice = 20% mark layout
         const ballLeft = 20;
-        const ballRight = 24; // Ball diameter spans roughly ~4% horizontal grid weight
+        const ballRight = 24; 
         const ballTop = nextBallY;
-        const ballBottom = nextBallY + 5.5; // Vertical payload slice clearance diameter
+        const ballBottom = nextBallY + 6; 
 
         for (const obs of updatedObstacles) {
           const obsLeft = obs.left;
           const obsRight = obs.left + obs.width;
-          const obsTop = 100 - obs.height; // Since objects sit pinned to ground coordinate layout
+          const obsTop = 88 - obs.height; 
 
-          // Standard 2D Axis-Aligned Bounding Box Intersection evaluations
           if (
             ballRight > obsLeft &&
             ballLeft < obsRight &&
@@ -181,113 +200,134 @@ const Bounce = () => {
   }, [highScore]);
 
   return (
-    <div className="w-full h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-slate-900 flex items-center justify-center overflow-hidden relative select-none font-sans">
+    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden relative select-none font-mono p-4">
       
-      {/* Heads Up Real-Time Score Dashboard HUD Panel */}
+      {/* HUD Dashboard */}
       {gameState !== "MENU" && (
-        <div className="absolute top-5 left-5 flex gap-6 text-white font-mono z-40 bg-black/30 backdrop-blur px-4 py-2 rounded-xl border border-white/10">
-          <div>SCORE: <span className="text-yellow-400 font-bold">{score}</span></div>
-          <div>BEST: <span className="text-emerald-400 font-bold">{highScore}</span></div>
+        <div className="absolute top-5 left-5 flex gap-6 text-green-400 text-lg z-40 bg-black border-2 border-green-400 p-2 shadow-[4px_4px_0px_#22c55e]">
+          <div>SCORE: <span>{score}</span></div>
+          <div>HI-SCORE: <span>{highScore}</span></div>
         </div>
       )}
 
-      {/* Pause Mode Toggler Action Trigger Item */}
+      {/* Pause Button */}
       {gameState === "PLAYING" && (
         <button
           onClick={() => setGameState("PAUSED")}
-          className="absolute top-5 right-5 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl font-bold z-40 backdrop-blur border border-white/20 active:scale-95 transition-all text-xs md:text-sm"
+          className="absolute top-5 right-5 bg-black hover:bg-zinc-900 text-green-400 border-2 border-green-400 px-4 py-2 font-bold z-40 shadow-[4px_4px_0px_#22c55e] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-xs uppercase"
         >
-          ⏸ PAUSE (P)
+          ⏸ PAUSE [P]
         </button>
       )}
 
-      {/* MENU STATE OVERLAY */}
+      {/* CLASSIC 2D MENU OVERLAY */}
       {gameState === "MENU" && (
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-11/12 border-2 border-purple-500 text-center animate-fade-in text-white">
-            <h1 className="text-3xl font-black tracking-wider mb-2 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              🚀 INFINITE BOUNCE
+        <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 p-8 border-4 border-double border-orange-500 max-w-sm w-full text-center text-white shadow-[8px_8px_0px_#ea580c]">
+            <h1 className="text-3xl font-black tracking-tighter mb-1 text-orange-500 animate-pulse">
+              🎮 RETRO BOUNCE
             </h1>
-            <p className="text-gray-400 text-xs font-semibold mb-6 uppercase tracking-widest">
-              Tap Spacebar to bounce higher over objects
+            <p className="text-zinc-400 text-[10px] uppercase tracking-widest mb-6">
+              Double-tap SPACE for Super Height
             </p>
             
-            <div className="flex flex-col gap-3 w-full">
+            <div className="flex flex-col gap-4 w-full text-black">
               <button 
                 onClick={() => selectDifficulty(1.0)}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-emerald-800 active:scale-95 transition-transform tracking-wide">
-                🟢 Casual (Slow)
+                className="w-full bg-yellow-400 hover:bg-yellow-300 font-bold py-2 border-b-4 border-yellow-700 active:border-b-0 uppercase text-sm tracking-wider">
+                Easy 
               </button>
               <button 
                 onClick={() => selectDifficulty(1.4)}
-                className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-amber-800 active:scale-95 transition-transform tracking-wide">
-                🟡 Arcade (Medium)
+                className="w-full bg-orange-500 hover:bg-orange-400 font-bold py-2 border-b-4 border-orange-800 active:border-b-0 uppercase text-sm tracking-wider">
+                Medium 
               </button>
               <button 
-                onClick={() => selectDifficulty(1.8)}
-                className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-rose-800 active:scale-95 transition-transform tracking-wide">
-                🔴 Hyper (Fast)
+                onClick={() => selectDifficulty(2.0)}
+                className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 border-b-4 border-red-900 active:border-b-0 uppercase text-sm tracking-wider">
+                Difficult 
               </button>
+            </div>
+            <div className="mt-6 text-zinc-500 text-[11px] uppercase">
+              Current Record: {highScore} PTS
             </div>
           </div>
         </div>
       )}
 
-      {/* PAUSE OVERLAY VIEW PANEL */}
+      {/* PAUSE SCREEN */}
       {gameState === "PAUSED" && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col justify-center items-center gap-4 z-50">
-          <p className="text-white font-black tracking-widest text-3xl animate-pulse">GAME PAUSED</p>
+        <div className="absolute inset-0 bg-black/80 flex flex-col justify-center items-center gap-4 z-50">
+          <p className="text-yellow-400 font-bold tracking-widest text-2xl border-4 border-dashed border-yellow-400 p-4 bg-black">
+            GAME PAUSED
+          </p>
           <button 
             onClick={() => setGameState("PLAYING")}
-            className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-transform"
+            className="px-6 py-2 border-white border-dashed text-white font-bold uppercase active:border shadow-lg"
           >
-            ▶ Resume Game
+            ▶ CONTINUE
           </button>
         </div>
       )}
 
-      {/* FAIL CONDITION WINDOW SCREEN OVERLAY */}
+      {/* FAIL GAME OVER OVERLAY */}
       {gameState === "FAIL" && (
-        <div className="absolute inset-0 bg-rose-950/90 backdrop-blur-md flex flex-col gap-4 justify-center items-center z-50">
-          <h1 className="text-7xl">💥</h1>
-          <p className="text-white font-black text-3xl md:text-5xl tracking-wide uppercase">CRASH LANDED</p>
-          <div className="text-rose-200 font-mono text-lg bg-black/40 px-6 py-2 rounded-xl border border-rose-500/30">
-            Final Score: <span className="text-white font-bold">{score}</span>
+        <div className="absolute inset-0 bg-black/95 flex flex-col gap-4 justify-center items-center z-50 p-4">
+          <div className="border-4 border-red-600 p-6 text-center bg-zinc-900 max-w-sm w-full shadow-[8px_8px_0px_#dc2626]">
+            <h1 className="text-red-600 font-black text-3xl uppercase tracking-tighter mb-4">GAME FAILED</h1>
+            
+            <div className="flex flex-col gap-2 font-mono text-sm uppercase mb-6 bg-black/40 p-3 border border-zinc-700 text-left">
+              <div className="text-zinc-400 flex justify-between">
+                <span>Your Run:</span> 
+                <span className="text-white font-bold">{score} pts</span>
+              </div>
+              <div className="text-zinc-400 flex justify-between border-t border-zinc-800 pt-1">
+                <span>High Score:</span> 
+                <span className="text-green-400 font-bold">{highScore} pts</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setGameState("MENU")}
+              className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold uppercase cursor-pointer border-b-4 border-red-900 active:border-b-0 active:translate-y-1 transition-all text-sm tracking-wide"
+            >
+              Try Again
+            </button>
           </div>
-          <button
-            onClick={() => setGameState("MENU")} // Sends player back to select different speeds
-            className="mt-2 px-8 py-3 bg-white text-rose-950 rounded-xl font-black uppercase tracking-wider hover:bg-neutral-100 active:scale-95 shadow-2xl transition-all"
-          >
-            Play Again
-          </button>
         </div>
       )}
 
-      {/* ACTIVE GAME RENDERING CONTAINER CANVAS */}
+      {/* 2D ARCADE RENDER SCREEN VIEW CONTAINER */}
       <div 
         onClick={handleBounce} 
-        className="w-full max-w-4xl h-[450px] bg-slate-950/50 rounded-2xl border-2 border-white/10 relative overflow-hidden backdrop-blur-sm cursor-pointer shadow-2xl"
+        className="w-full h-full bg-zinc-950 rounded-none border-4 border-dashed border-zinc-700 relative overflow-hidden cursor-pointer"
       >
-        {/* Background Instruction Hints */}
-        {gameState === "PLAYING" && score < 150 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white/10 font-bold uppercase tracking-widest text-center select-none text-sm p-4">
-            Press Spacebar or Click Screen Container directly to Bounce!
+        {/* Retro scanline overlay screen effect */}
+        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,0,0.06))] bg-[length:100%_4px,3px_100%] z-40"></div>
+
+        {/* Action Jump Indicator Hint */}
+        {gameState === "PLAYING" && score < 120 && (
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 pointer-events-none text-zinc-700 font-bold text-xs text-center select-none uppercase tracking-widest animate-pulse">
+            Press Spacebar Once to Jump / Double-Press for Max Air
           </div>
         )}
 
-        {/* Dynamic Ball Actor Element */}
+        {/* Pixel/8-Bit Style Ball Actor */}
         <div
           style={{
             top: `${ballY}%`,
             left: `20%`,
           }}
-          className="absolute w-10 h-10 bg-gradient-to-tr from-cyan-500 to-teal-300 rounded-full z-30 shadow-[0_0_15px_rgba(34,211,238,0.5)] border border-cyan-200 transition-shadow duration-300"
+          className="absolute w-8 h-8 bg-yellow-400 border-2 border-black z-30 shadow-[2px_2px_0px_rgba(255,255,0,0.4)] flex items-center justify-center rounded-none"
         >
-          {/* Internal core shine detail element */}
-          <span className="w-2 h-2 bg-white rounded-full absolute top-1.5 left-1.5 opacity-70"></span>
+          {/* Retro Face Detail */}
+          <div className="flex gap-1 justify-center w-full">
+            <span className="w-1 h-1 bg-black block"></span>
+            <span className="w-1 h-1 bg-black block"></span>
+          </div>
         </div>
 
-        {/* Dynamic Procedural Obstacles Node Iteration */}
+        {/* Stylized Brick Wall Obstacles */}
         {obstacles.map((obs) => (
           <div
             key={obs.id}
@@ -295,25 +335,35 @@ const Bounce = () => {
               left: `${obs.left}%`,
               width: `${obs.width}%`,
               height: `${obs.height}%`,
-              bottom: "12%", // Pins exactly to line up flush with the horizon track floor line element below
+              bottom: "12%",
             }}
-            className="absolute bg-gradient-to-b from-purple-600 to-indigo-800 border border-purple-400/50 rounded-t-lg shadow-lg z-20"
-          />
+            className="absolute bg-orange-600 border-2 border-black z-20 flex flex-col justify-between overflow-hidden shadow-[4px_0px_0px_rgba(0,0,0,0.5)]"
+          >
+            {/* Retro 2D Brick Row Alternating Subdivisions */}
+            <div className="w-full h-2 border-b border-black/30 bg-orange-500 opacity-85"></div>
+            <div className="w-full h-2 border-b border-black/30 bg-orange-700 opacity-90 flex justify-around">
+              <span className="w-0.5 h-full bg-black/40"></span>
+              <span className="w-0.5 h-full bg-black/40"></span>
+            </div>
+            <div className="w-full h-2 border-b border-black/30 bg-orange-500 opacity-85"></div>
+            <div className="w-full h-full bg-orange-600"></div>
+          </div>
         ))}
 
-        {/* Level Track Horizon Floor Line Anchor Asset */}
-        <div className="absolute bottom-0 left-0 right-0 h-[12%] bg-gradient-to-b from-slate-800 to-slate-900 border-t-2 border-indigo-500/40 z-10 flex items-center justify-center">
-          <div className="w-full h-1 bg-indigo-500/10 animate-pulse"></div>
+        {/* Level Horizon Floor Line Anchor (8-Bit Checkered Track Floor Layout) */}
+        <div className="absolute bottom-0 left-0 right-0 h-[12%] bg-zinc-800 border-t-4 border-green-500 z-10 flex flex-col justify-between p-0.5">
+          <div className="w-full h-1/2 bg-[repeating-linear-gradient(90deg,#22c55e,#22c55e_10px,#166534_10px,#166534_20px)] opacity-80"></div>
+          <div className="w-full h-1/2 bg-zinc-900"></div>
         </div>
       </div>
 
-      {/* On-Screen Touch / Click Assist Button Overlay (Specifically tailored for mobile or mouse-heavy users) */}
+      {/* On-Screen Mobile Action Assist Control Trigger */}
       {gameState === "PLAYING" && (
         <button
           onClick={handleBounce}
-          className="absolute bottom-10 px-12 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 active:from-purple-700 text-white rounded-2xl font-extrabold text-xl shadow-2xl active:scale-95 transition-all md:hidden border border-purple-400/30 z-40 tracking-wider"
+          className="absolute bottom-8 px-10 py-3 bg-orange-500 text-black font-black border-2 border-black rounded-none shadow-[4px_4px_0px_#000] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all md:hidden z-40 text-sm tracking-wider"
         >
-          BOUNCE!
+          BOUNCE BUTTON
         </button>
       )}
     </div>
