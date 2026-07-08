@@ -57,7 +57,7 @@ const Snake = () => {
       setSnakeSegments((prevSegments) => {
         const newSegments = [...prevSegments];
         const head = { ...newSegments[0] };
-        const STEP = 1;
+        const STEP = 2;
 
         switch (directionRef.current) {
           case "UP":
@@ -168,7 +168,7 @@ const Snake = () => {
 
             <div className="flex flex-col gap-3 w-full">
               <button
-                onClick={() => setSpeed(120)}
+                onClick={() => setSpeed(100)}
                 className="w-full bg-green-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-green-700 active:scale-95 transition-transform uppercase tracking-wider"
               >
                 🟢 Easy
@@ -180,7 +180,7 @@ const Snake = () => {
                 🟡 Medium
               </button>
               <button
-                onClick={() => setSpeed(20)}
+                onClick={() => setSpeed(40)}
                 className="w-full bg-red-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-red-700 active:scale-95 transition-transform uppercase tracking-wider"
               >
                 🔴 Hard
@@ -244,12 +244,12 @@ const Snake = () => {
             YOU FAILED
           </p>
           <p className="text-red-100 font-bold -mt-2">Final Score: {score}</p>
-          <button
+          {/* <button
             onClick={restartGame}
             className="mt-2 px-6 py-3 bg-white text-red-600 rounded-xl font-bold uppercase tracking-wider hover:bg-neutral-100 active:scale-95 shadow-2xl transition-transform"
           >
             Try Again
-          </button>
+          </button> */}
           <div className="flex items-center gap-4">
             <HomeControl />
             <ResetControl onclick={restartGame} />

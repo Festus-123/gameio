@@ -212,7 +212,7 @@ const Bounce = () => {
     <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden relative select-none font-mono p-4">
       {/* HUD Dashboard */}
       {gameState !== "MENU" && (
-        <div className="absolute top-5 left-5 flex gap-6 text-green-400 text-lg z-40 bg-black border-2 border-green-400 p-2 shadow-[4px_4px_0px_#22c55e]">
+        <div className="absolute top-5 left-5 flex gap-6 text-green-400 text-sm z-40 bg-black border-2 border-green-400 p-2 shadow-[4px_4px_0px_#22c55e]">
           <div>
             SCORE: <span>{score}</span>
           </div>
@@ -228,7 +228,7 @@ const Bounce = () => {
           onClick={() => setGameState("PAUSED")}
           className="absolute top-5 right-5 bg-black hover:bg-zinc-900 text-green-400 border-2 border-green-400 px-4 py-2 font-bold z-40 shadow-[4px_4px_0px_#22c55e] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-xs uppercase"
         >
-          ⏸ PAUSE [P]
+          <FaPause />
         </button>
       )}
 
@@ -314,12 +314,6 @@ const Bounce = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => setGameState("MENU")}
-              className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold uppercase cursor-pointer border-b-4 border-red-900 active:border-b-0 active:translate-y-1 transition-all text-sm tracking-wide"
-            >
-              Try Again
-            </button>
             <div className="flex items-center justify-center gap-4 mt-4">
               <HomeControl />
               <ResetControl onclick={startGame} />

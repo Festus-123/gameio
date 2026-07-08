@@ -168,14 +168,14 @@ const TicTacToe = () => {
           <div className="bg-black border-2 border-orange-500 text-white px-4 py-3 text-xs uppercase tracking-widest shadow-[4px_4px_0px_#ea580c] z-20">
             <span>Turn: {turn}</span>
           </div>
+        </div>
+      </div>
           <button
             onClick={() => setOptions(true)}
-            className="text-2xl md:text-3xl  p-3 cursor-pointer"
+            className="absolute bottom-5 right-5  text-2xl md:text-3xl  p-3 cursor-pointer"
           >
             <FiSettings />
           </button>
-        </div>
-      </div>
 
       {/* Tic Tac Toe Grid Container with Retro Arcade Finish */}
       <div className="grid grid-cols-3 h-full w-full text-white">
@@ -214,8 +214,13 @@ const TicTacToe = () => {
         <div className="absolute bg-black/80 z-40 inset-0 flex items-center justify-center">
           <div className="flex flex-col items-center justify-center gap-4">
             <h1 className="flex flex-col gap-4 text-4xl md:text-8xl text-white items-center">
+              { winner !== "DRAW" && (
+              <div
+                className="flex flex-col gap-4">
               <span>🍾🎉🎊</span>
               <span>Winner</span>
+              </div>
+              )}
               <span>{winner}</span>
             </h1>
             <button
