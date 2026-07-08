@@ -10,6 +10,7 @@ import bounce from "../assets/logos/Bounce2.png";
 import snake from "../assets/logos/snake2.png";
 import tic_tac_toe from "../assets/logos/tic-tac-toe.png";
 import match_tiles from "../assets/logos/match-tiles.png";
+import shooting from "../assets/logos/shooting.png";  
 
 type LINKS = {
   name: string;
@@ -23,6 +24,7 @@ const Home = () => {
     { name: "Tic Tac Toe", path: "/tic-tac-toe", img: tic_tac_toe },
     { name: "Match tiles", path: "/match-tiles", img: match_tiles },
     { name: "Bounce", path: "/bounce", img: bounce },
+    { name: "Shooting", path: "/shooting", img: shooting },
   ];
 
   const pathname = usePathname();
