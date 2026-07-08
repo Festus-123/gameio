@@ -1,5 +1,9 @@
 "use client";
+import HomeControl from "@/components/home-control/HomeControl";
+import ResetControl from "@/components/reset-control/ResetControl";
 import { useState, useEffect, useRef } from "react";
+
+import { FaPause, FaPlay } from "react-icons/fa";
 
 type Obstacle = {
   id: number;
@@ -10,18 +14,20 @@ type Obstacle = {
 
 const Bounce = () => {
   // Game state controls
-  const [gameState, setGameState] = useState<"MENU" | "PLAYING" | "PAUSED" | "FAIL">("MENU");
+  const [gameState, setGameState] = useState<
+    "MENU" | "PLAYING" | "PAUSED" | "FAIL"
+  >("MENU");
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [speedMultiplier, setSpeedMultiplier] = useState(1); 
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
 
   // Ball physics configuration variables
   const [ballY, setBallY] = useState(50);
   const velocityRef = useRef(0);
   const jumpCountRef = useRef(0); // Tracking multi-jump counts (up to 2 jumps)
-  
+
   const GRAVITY = 0.5;
-  const IDLE_BOUNCE_FORCE = -5;  // Small, automatic gentle bounce on floor impact
+  const IDLE_BOUNCE_FORCE = -5; // Small, automatic gentle bounce on floor impact
   const BASE_BOUNCE_FORCE = -10; // First intentional space-bar bounce
   const DOUBLE_BOUNCE_FORCE = -14; // Second immediate space-bar bounce
   const TERMINAL_VELOCITY = 14;
@@ -48,7 +54,7 @@ const Bounce = () => {
   // Trigger a manual bounce (Space / Click)
   const handleBounce = () => {
     if (stateRef.current !== "PLAYING") return;
-    
+
     if (jumpCountRef.current === 0) {
       velocityRef.current = BASE_BOUNCE_FORCE;
       jumpCountRef.current = 1;
@@ -107,25 +113,28 @@ const Bounce = () => {
       }
 
       // 1. Process Ball Gravity Physics
-      velocityRef.current = Math.min(velocityRef.current + GRAVITY, TERMINAL_VELOCITY);
+      velocityRef.current = Math.min(
+        velocityRef.current + GRAVITY,
+        TERMINAL_VELOCITY,
+      );
       let nextBallY = 0;
-      
+
       setBallY((prevY) => {
         const computedY = prevY + velocityRef.current;
-        
+
         // Floor Boundary: Triggers automatic small gentle bounce
         if (computedY >= 82) {
-          velocityRef.current = IDLE_BOUNCE_FORCE; 
+          velocityRef.current = IDLE_BOUNCE_FORCE;
           jumpCountRef.current = 0; // Reset double-jump capacity upon touching floor
           return 82;
         }
-        
+
         // Ceiling Constraints Configuration
         if (computedY <= 0) {
           velocityRef.current = 2;
           return 0;
         }
-        
+
         nextBallY = computedY;
         return computedY;
       });
@@ -145,9 +154,9 @@ const Bounce = () => {
       const spawnThreshold = Math.max(40, 80 / speedRef.current);
       if (obstacleSpawnTimer.current >= spawnThreshold) {
         if (Math.random() > 0.4 || obstacles.length === 0) {
-          const randomWidth = Math.floor(Math.random() * 3) + 5; 
-          const randomHeight = Math.floor(Math.random() * 20) + 15; 
-          
+          const randomWidth = Math.floor(Math.random() * 3) + 5;
+          const randomHeight = Math.floor(Math.random() * 20) + 15;
+
           setObstacles((prev) => [
             ...prev,
             {
@@ -171,14 +180,14 @@ const Bounce = () => {
           .filter((obs) => obs.left + obs.width > 0);
 
         const ballLeft = 20;
-        const ballRight = 24; 
+        const ballRight = 24;
         const ballTop = nextBallY;
-        const ballBottom = nextBallY + 6; 
+        const ballBottom = nextBallY + 6;
 
         for (const obs of updatedObstacles) {
           const obsLeft = obs.left;
           const obsRight = obs.left + obs.width;
-          const obsTop = 88 - obs.height; 
+          const obsTop = 88 - obs.height;
 
           if (
             ballRight > obsLeft &&
@@ -201,12 +210,15 @@ const Bounce = () => {
 
   return (
     <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden relative select-none font-mono p-4">
-      
       {/* HUD Dashboard */}
       {gameState !== "MENU" && (
         <div className="absolute top-5 left-5 flex gap-6 text-green-400 text-lg z-40 bg-black border-2 border-green-400 p-2 shadow-[4px_4px_0px_#22c55e]">
-          <div>SCORE: <span>{score}</span></div>
-          <div>HI-SCORE: <span>{highScore}</span></div>
+          <div>
+            SCORE: <span>{score}</span>
+          </div>
+          <div>
+            HI-SCORE: <span>{highScore}</span>
+          </div>
         </div>
       )}
 
@@ -223,6 +235,10 @@ const Bounce = () => {
       {/* CLASSIC 2D MENU OVERLAY */}
       {gameState === "MENU" && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="absolute top-5 left-5">
+            <HomeControl />
+          </div>
+
           <div className="bg-zinc-900 p-8 border-4 border-double border-orange-500 max-w-sm w-full text-center text-white shadow-[8px_8px_0px_#ea580c]">
             <h1 className="text-3xl font-black tracking-tighter mb-1 text-orange-500 animate-pulse">
               🎮 RETRO BOUNCE
@@ -230,22 +246,25 @@ const Bounce = () => {
             <p className="text-zinc-400 text-[10px] uppercase tracking-widest mb-6">
               Double-tap SPACE for Super Height
             </p>
-            
+
             <div className="flex flex-col gap-4 w-full text-black">
-              <button 
+              <button
                 onClick={() => selectDifficulty(1.0)}
-                className="w-full bg-yellow-400 hover:bg-yellow-300 font-bold py-2 border-b-4 border-yellow-700 active:border-b-0 uppercase text-sm tracking-wider">
-                Easy 
+                className="w-full bg-yellow-400 hover:bg-yellow-300 font-bold py-2 border-b-4 border-yellow-700 active:border-b-0 uppercase text-sm tracking-wider"
+              >
+                Easy
               </button>
-              <button 
+              <button
                 onClick={() => selectDifficulty(1.4)}
-                className="w-full bg-orange-500 hover:bg-orange-400 font-bold py-2 border-b-4 border-orange-800 active:border-b-0 uppercase text-sm tracking-wider">
-                Medium 
+                className="w-full bg-orange-500 hover:bg-orange-400 font-bold py-2 border-b-4 border-orange-800 active:border-b-0 uppercase text-sm tracking-wider"
+              >
+                Medium
               </button>
-              <button 
+              <button
                 onClick={() => selectDifficulty(2.0)}
-                className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 border-b-4 border-red-900 active:border-b-0 uppercase text-sm tracking-wider">
-                Difficult 
+                className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 border-b-4 border-red-900 active:border-b-0 uppercase text-sm tracking-wider"
+              >
+                Difficult
               </button>
             </div>
             <div className="mt-6 text-zinc-500 text-[11px] uppercase">
@@ -261,12 +280,16 @@ const Bounce = () => {
           <p className="text-yellow-400 font-bold tracking-widest text-2xl border-4 border-dashed border-yellow-400 p-4 bg-black">
             GAME PAUSED
           </p>
-          <button 
-            onClick={() => setGameState("PLAYING")}
-            className="px-6 py-2 border-white border-dashed text-white font-bold uppercase active:border shadow-lg"
-          >
-            ▶ CONTINUE
-          </button>
+          <div className="flex items-center gap-4 mt-4">
+            <HomeControl />
+            <ResetControl onclick={startGame} />
+            <button
+              onClick={() => setGameState("PLAYING")}
+              className="rounded-full p-4 border-white border-2 text-2xl md:text-4xl text-white"
+            >
+              <FaPause />
+            </button>
+          </div>
         </div>
       )}
 
@@ -274,16 +297,20 @@ const Bounce = () => {
       {gameState === "FAIL" && (
         <div className="absolute inset-0 bg-black/95 flex flex-col gap-4 justify-center items-center z-50 p-4">
           <div className="border-4 border-red-600 p-6 text-center bg-zinc-900 max-w-sm w-full shadow-[8px_8px_0px_#dc2626]">
-            <h1 className="text-red-600 font-black text-3xl uppercase tracking-tighter mb-4">GAME FAILED</h1>
-            
+            <h1 className="text-red-600 font-black text-3xl uppercase tracking-tighter mb-4">
+              GAME FAILED
+            </h1>
+
             <div className="flex flex-col gap-2 font-mono text-sm uppercase mb-6 bg-black/40 p-3 border border-zinc-700 text-left">
               <div className="text-zinc-400 flex justify-between">
-                <span>Your Run:</span> 
+                <span>Your Run:</span>
                 <span className="text-white font-bold">{score} pts</span>
               </div>
               <div className="text-zinc-400 flex justify-between border-t border-zinc-800 pt-1">
-                <span>High Score:</span> 
-                <span className="text-green-400 font-bold">{highScore} pts</span>
+                <span>High Score:</span>
+                <span className="text-green-400 font-bold">
+                  {highScore} pts
+                </span>
               </div>
             </div>
 
@@ -293,13 +320,17 @@ const Bounce = () => {
             >
               Try Again
             </button>
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <HomeControl />
+              <ResetControl onclick={startGame} />
+            </div>
           </div>
         </div>
       )}
 
       {/* 2D ARCADE RENDER SCREEN VIEW CONTAINER */}
-      <div 
-        onClick={handleBounce} 
+      <div
+        onClick={handleBounce}
         className="w-full h-full bg-zinc-950 rounded-none border-4 border-dashed border-zinc-700 relative overflow-hidden cursor-pointer"
       >
         {/* Retro scanline overlay screen effect */}

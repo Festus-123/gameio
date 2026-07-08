@@ -10,49 +10,48 @@ import bounce from "../assets/logos/bounce.png";
 import snake from "../assets/logos/snake.png";
 
 type LINKS = {
-    name: string, path: string, img: StaticImageData
-}
+  name: string;
+  path: string;
+  img: StaticImageData;
+};
 
 const Home = () => {
-    const links: LINKS[] = [
-        {name: "Snake", path: "/snake", img: snake },
-        {name: "Tic Tac Toe", path: "/tic-tac-toe", img: snake},
-        {name: "Matching tiles", path: "/matching-tiles", img: snake},
-        {name: "Bounce", path: "/bounce", img: bounce}
-    ]
+  const links: LINKS[] = [
+    { name: "Snake", path: "/snake", img: snake },
+    { name: "Tic Tac Toe", path: "/tic-tac-toe", img: snake },
+    { name: "Matching tiles", path: "/matching-tiles", img: snake },
+    { name: "Bounce", path: "/bounce", img: snake },
+  ];
 
-    const pathname = usePathname();
+  const pathname = usePathname();
 
-    return (
-        <div
-            className="w-full h-screen grid grid-cols-2 md:grid-cols-4 items-center place-items-center overflow-hidden bg-blue-700">
-            
-            { links.map((item, index) => (
-                <div
-                    key={index}
-                    className="p-4">
-                        <Link
-                            href={item.path}
-                            className={`${item.path === pathname && "scale-120" } hover:scale-110`}>
-                                <Image 
-                                    src={item.img}
-                                    alt={item.name}
-                                    width={100}
-                                    height={100}
-                                    className="rounded-full border-3 border-[repeating-linear-gradient(90deg,#22c55e,#22c55e_10px,#166534_10px,#166534_20px)]"
-                                />
-                                <h1
-                                    className="text-2xl md:text-4xl text-shadow-lg font-black text-shadow-white/40">
-                                    {item.name}
-                                </h1>
-                        </Link>
+  return (
+    <div className="relative w-full h-screen overflow-hidden bg-blue-700">
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,0,0.06))] bg-[length:100%_4px,3px_100%] z-10"></div>
 
-
-                </div>
-            ))}
-
-        </div>
-    );
-}
+      <div className="w-full h-full grid grid-cols-2 md:grid-cols-4 items-center  place-items-center">
+        {links.map((item, index) => (
+          <div key={index} className="relative p-4 ">
+            <Link
+              href={item.path}
+              className={`flex flex-col items-center ${item.path === pathname && "scale-120"} hover:scale-110`}
+            >
+              <Image
+                src={item.img}
+                alt={item.name}
+                width={100}
+                height={100}
+                className="rounded-full border-3 border-[repeating-linear-gradient(90deg,#22c55e,#22c55e_10px,#166534_10px,#166534_20px)]"
+              />
+              <h1 className="text-2xl md:text-4xl text-shadow-lg font-black text-shadow-white/40">
+                {item.name}
+              </h1>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default Home;

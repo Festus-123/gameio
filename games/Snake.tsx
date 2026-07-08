@@ -1,4 +1,6 @@
 "use client";
+import HomeControl from "@/components/home-control/HomeControl";
+import ResetControl from "@/components/reset-control/ResetControl";
 import { useState, useEffect, useRef } from "react";
 
 type CORD = {
@@ -13,9 +15,9 @@ const Snake = () => {
   const [score, setScore] = useState(0);
   const [snakeSegments, setSnakeSegments] = useState<CORD[]>([
     { top: 50, left: 50 }, // Head
-    { top: 50, left: 51 }, // Body 1
-    { top: 50, left: 52 }, // Body 2
-    { top: 50, left: 53 }, // Body 3
+    { top: 50, left: 52 }, // Body 1
+    { top: 50, left: 54 }, // Body 2
+    { top: 50, left: 56 }, // Body 3
   ]);
 
   const [direction, setDirection] = useState<Direction>(null);
@@ -58,10 +60,18 @@ const Snake = () => {
         const STEP = 1;
 
         switch (directionRef.current) {
-          case "UP": head.top -= STEP; break;
-          case "DOWN": head.top += STEP; break;
-          case "LEFT": head.left -= STEP; break;
-          case "RIGHT": head.left += STEP; break;
+          case "UP":
+            head.top -= STEP;
+            break;
+          case "DOWN":
+            head.top += STEP;
+            break;
+          case "LEFT":
+            head.left -= STEP;
+            break;
+          case "RIGHT":
+            head.left += STEP;
+            break;
         }
 
         // 1. Boundary Wall Collision Checks
@@ -135,40 +145,50 @@ const Snake = () => {
   }, [pause, fail, speed]);
 
   return (
-    <div className="w-full h-screen bg-yellow-400 flex items-center justify-center overflow-hidden relative select-none">
-      
+    <div className="relative w-full h-screen bg-yellow-400 flex items-center justify-center overflow-hidden relative select-none">
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,0,0.06))] bg-[length:100%_4px,3px_100%] z-50"></div>
+
       {/* Real-time Live Score Display */}
       {speed !== null && (
         <div className="absolute top-5 left-5 text-shadow-lg text-white px-4 py-2 font-extrabold tracking-wider z-40 text-xl md:text-3xl">
-             {score}
+          {score}
         </div>
       )}
 
       {/* Speed / Difficulty Selection Overlay */}
       {speed === null && !fail && (
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-11/12 border-4 border-black text-center animate-fade-in">
-            <h2 className="text-2xl font-black text-black tracking-wide mb-2">🐍 SLITHER SNAKE</h2>
-            <p className="text-gray-600 text-sm font-semibold mb-6">Select your game difficulty to begin:</p>
-            
+            <h2 className="text-2xl font-black text-black tracking-wide mb-2">
+              🐍 SLITHER SNAKE
+            </h2>
+            <p className="text-gray-600 text-sm font-semibold mb-6">
+              Select your game difficulty to begin:
+            </p>
+
             <div className="flex flex-col gap-3 w-full">
-              <button 
+              <button
                 onClick={() => setSpeed(120)}
-                className="w-full bg-green-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-green-700 active:scale-95 transition-transform uppercase tracking-wider">
-                🟢 Easy 
+                className="w-full bg-green-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-green-700 active:scale-95 transition-transform uppercase tracking-wider"
+              >
+                🟢 Easy
               </button>
-              <button 
+              <button
                 onClick={() => setSpeed(80)}
-                className="w-full bg-orange-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-orange-700 active:scale-95 transition-transform uppercase tracking-wider">
-                🟡 Medium 
+                className="w-full bg-orange-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-orange-700 active:scale-95 transition-transform uppercase tracking-wider"
+              >
+                🟡 Medium
               </button>
-              <button 
+              <button
                 onClick={() => setSpeed(20)}
-                className="w-full bg-red-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-red-700 active:scale-95 transition-transform uppercase tracking-wider">
-                🔴 Hard 
+                className="w-full bg-red-400 text-white font-bold py-3 px-6 rounded-xl border-b-4 border-red-700 active:scale-95 transition-transform uppercase tracking-wider"
+              >
+                🔴 Hard
               </button>
             </div>
+          </div>
+          <div className="absolute top-5 left-5 z-50">
+            <HomeControl />
           </div>
         </div>
       )}
@@ -177,7 +197,9 @@ const Snake = () => {
       {speed !== null && !direction && !fail && (
         <div className="absolute top-20 text-center font-bold text-black text-base md:text-lg animate-bounce z-40">
           Press an Arrow Key or D-Pad to Slither! <br />
-          <span className="text-xs opacity-75 font-semibold">Avoid boundaries & biting your tail</span>
+          <span className="text-xs opacity-75 font-semibold">
+            Avoid boundaries & biting your tail
+          </span>
         </div>
       )}
 
@@ -194,20 +216,33 @@ const Snake = () => {
       {/* Pause Screen Overlay */}
       {pause && (
         <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center gap-4 z-50">
-          <div className="flex items-center gap-4">
+          <div
+            onClick={() => setPause(!pause)}
+            className="flex items-center gap-4"
+          >
             <div className="w-6 h-16 bg-white border-2 rounded-sm"></div>
             <div className="w-6 h-16 bg-white border-2 rounded-sm"></div>
           </div>
-          <p className="text-white font-bold tracking-widest text-xl">GAME PAUSED</p>
+          <p className="text-white font-bold tracking-widest text-xl">
+            GAME PAUSED
+          </p>
+          <div className="flex items-center gap-4">
+            <HomeControl />
+            <ResetControl onclick={restartGame} />
+          </div>
         </div>
       )}
 
       {/* Fail Overlay Screen */}
       {fail && (
         <div className="absolute inset-0 bg-red-600/90 flex flex-col gap-4 justify-center items-center z-50">
-            <h1 className="text-white text-shadow-lg tracking-wider text-xl md:text-3xl p-2">SCORE: {score} </h1>
+          <h1 className="text-white text-shadow-lg tracking-wider text-xl md:text-3xl p-2">
+            SCORE: {score}{" "}
+          </h1>
           <h1 className="text-6xl md:text-8xl">☹️</h1>
-          <p className="text-white font-black text-2xl md:text-4xl tracking-wide">YOU FAILED</p>
+          <p className="text-white font-black text-2xl md:text-4xl tracking-wide">
+            YOU FAILED
+          </p>
           <p className="text-red-100 font-bold -mt-2">Final Score: {score}</p>
           <button
             onClick={restartGame}
@@ -215,6 +250,10 @@ const Snake = () => {
           >
             Try Again
           </button>
+          <div className="flex items-center gap-4">
+            <HomeControl />
+            <ResetControl onclick={restartGame} />
+          </div>
         </div>
       )}
 
@@ -235,7 +274,6 @@ const Snake = () => {
         </div>
       ))}
 
-
       {/* Snake Food */}
       <span
         style={{
@@ -248,27 +286,51 @@ const Snake = () => {
       {/* Mobile D-Pad Controls */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 md:hidden z-40 opacity-85">
         <button
-          onClick={() => !pause && !fail && speed !== null && directionRef.current !== "DOWN" && setDirection("UP")}
+          onClick={() =>
+            !pause &&
+            !fail &&
+            speed !== null &&
+            directionRef.current !== "DOWN" &&
+            setDirection("UP")
+          }
           className="w-14 h-14 bg-black/40 text-white rounded-xl flex items-center justify-center font-bold text-2xl active:scale-95 shadow-lg"
         >
           ▲
         </button>
         <div className="flex gap-14">
           <button
-            onClick={() => !pause && !fail && speed !== null && directionRef.current !== "RIGHT" && setDirection("LEFT")}
+            onClick={() =>
+              !pause &&
+              !fail &&
+              speed !== null &&
+              directionRef.current !== "RIGHT" &&
+              setDirection("LEFT")
+            }
             className="w-14 h-14 bg-black/40 text-white rounded-xl flex items-center justify-center font-bold text-2xl active:scale-95 shadow-lg"
           >
             ◀
           </button>
           <button
-            onClick={() => !pause && !fail && speed !== null && directionRef.current !== "LEFT" && setDirection("RIGHT")}
+            onClick={() =>
+              !pause &&
+              !fail &&
+              speed !== null &&
+              directionRef.current !== "LEFT" &&
+              setDirection("RIGHT")
+            }
             className="w-14 h-14 bg-black/40 text-white rounded-xl flex items-center justify-center font-bold text-2xl active:scale-95 shadow-lg"
           >
             ▶
           </button>
         </div>
         <button
-          onClick={() => !pause && !fail && speed !== null && directionRef.current !== "UP" && setDirection("DOWN")}
+          onClick={() =>
+            !pause &&
+            !fail &&
+            speed !== null &&
+            directionRef.current !== "UP" &&
+            setDirection("DOWN")
+          }
           className="w-14 h-14 bg-black/40 text-white rounded-xl flex items-center justify-center font-bold text-2xl active:scale-95 shadow-lg"
         >
           ▼
